@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GovPilot OS - Government Innovation Platform</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <nav id="navbar">
+      <div class="nav-brand">GovPilot OS</div>
+      <div class="nav-links" id="navLinks">
+        <span id="userRole" class="role-badge"></span>
+        <button onclick="app.logout()" class="nav-btn">Logout</button>
+      </div>
+    </nav>
+
+    <div id="authSection" class="section">
+      <div class="auth-container">
+        <div class="auth-box">
+          <h1>Welcome to GovPilot OS</h1>
+          <p class="subtitle">Evidence-based pilot platform for government innovation</p>
+          <div class="auth-tabs">
+            <button class="tab-btn active" onclick="app.showAuthTab('login')">Login</button>
+            <button class="tab-btn" onclick="app.showAuthTab('register')">Register</button>
+          </div>
+          <form id="loginForm" onsubmit="app.handleLogin(event)">
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button type="submit" class="btn-primary">Login</button>
+          </form>
+          <form id="registerForm" onsubmit="app.handleRegister(event)" style="display:none;">
+            <input type="text" id="regName" placeholder="Full Name" required>
+            <input type="email" id="regEmail" placeholder="Email" required>
+            <input type="password" id="regPassword" placeholder="Password" required>
+            <select id="regRole" required>
+              <option value="">Select Role</option>
+              <option value="government">Government Officer</option>
+              <option value="startup">Startup</option>
+              <option value="expert">Expert/Evaluator</option>
+              <option value="admin">Platform Admin</option>
+            </select>
+            <input type="text" id="regOrg" placeholder="Organization">
+            <textarea id="regBio" placeholder="Bio" rows="2"></textarea>
+            <button type="submit" class="btn-primary">Register</button>
+          </form>
+          <div class="demo-hint">
+            <p>Demo accounts:</p>
+            <code>officer@govpilot.gov</code> / <code>password123</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashboardSection" class="section" style="display:none;">
+      <div class="dashboard">
+        <aside class="sidebar">
+          <div class="sidebar-menu" id="sidebarMenu"></div>
+        </aside>
+        <main class="main-content" id="mainContent"></main>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

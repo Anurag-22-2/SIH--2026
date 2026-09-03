@@ -1,0 +1,22 @@
+{
+  "name": "govpilot-os",
+  "version": "1.0.0",
+  "description": "GovPilot OS - Digital platform for government-startup innovation pilots",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "init-db": "node server/db/init.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
+    "express-rate-limit": "^8.7.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "uuid": "^9.0.1"
+  }
+}

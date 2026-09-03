@@ -1,0 +1,130 @@
+{
+  "startups": [
+    {
+      "id": "startup-staqu",
+      "name": "Staqu Technologies",
+      "legalName": "Staqu Technologies Pvt Ltd",
+      "dpiitNumber": "DIPP14592",
+      "dpiitRecognized": true,
+      "trlLevel": 9,
+      "sector": "Public Safety",
+      "techStack": ["Computer Vision", "AI", "Python", "Edge AI"],
+      "teamSize": 85,
+      "pastGovProjects": [
+        { "title": "UP Police AI CCTV Analytics", "status": "deployed" },
+        { "title": "Smart City Monitoring", "status": "completed" }
+      ],
+      "budget": 4200000,
+      "turnover": 152000000,
+      "founder": "Vikas Madaan",
+      "contactEmail": "startup@staqu.com"
+    },
+    {
+      "id": "startup-niramai",
+      "name": "Niramai",
+      "legalName": "Niramai Health Analytix Pvt Ltd",
+      "dpiitNumber": "DIPP22451",
+      "dpiitRecognized": true,
+      "trlLevel": 8,
+      "sector": "HealthTech",
+      "techStack": ["Thermal Imaging", "Machine Learning", "Healthcare AI"],
+      "teamSize": 120,
+      "pastGovProjects": [
+        { "title": "Rural Screening Camps", "status": "deployed" },
+        { "title": "Public Health Mapping", "status": "completed" }
+      ],
+      "budget": 2500000,
+      "turnover": 85000000,
+      "founder": "Nandini Ahuja",
+      "contactEmail": "team@niramai.com"
+    },
+    {
+      "id": "startup-aerem",
+      "name": "AEREM",
+      "legalName": "AEREM Energy Pvt Ltd",
+      "dpiitNumber": "DIPP30198",
+      "dpiitRecognized": true,
+      "trlLevel": 7,
+      "sector": "Energy",
+      "techStack": ["IoT", "Energy Analytics", "Sustainability"],
+      "teamSize": 60,
+      "pastGovProjects": [
+        { "title": "Energy Efficiency Audit", "status": "deployed" }
+      ],
+      "budget": 2900000,
+      "turnover": 54000000,
+      "founder": "Rohit Kapoor",
+      "contactEmail": "hello@aerem.in"
+    }
+  ],
+  "proposals": [
+    {
+      "id": "proposal-001",
+      "startupId": "startup-staqu",
+      "startupName": "Staqu Technologies",
+      "challengeId": "challenge-001",
+      "title": "AI-Powered Request Router",
+      "description": "Deploy an AI routing engine for citizen complaint classification and department escalation.",
+      "solutionApproach": "Use NLP and vision models to classify documents and alert departments in real time.",
+      "teamDescription": "3 ML engineers, 1 backend engineer, 1 product specialist",
+      "budgetEstimate": 4200000,
+      "founderEmail": "vks@staqu.com",
+      "founderName": "Vikas Madaan"
+    },
+    {
+      "id": "proposal-002",
+      "startupId": "startup-niramai",
+      "startupName": "Niramai",
+      "challengeId": "challenge-002",
+      "title": "Thermal Screening Pilot",
+      "description": "Deploy non-invasive thermal screening for public health diagnostics and community triage.",
+      "solutionApproach": "Train thermal imaging models to detect anomalies and produce triage scorecards.",
+      "teamDescription": "2 AI engineers, 1 domain scientist, 1 operations lead",
+      "budgetEstimate": 3000000,
+      "founderEmail": "nandini@niramai.com",
+      "founderName": "Nandini Ahuja"
+    },
+    {
+      "id": "proposal-003",
+      "startupId": "startup-aerem",
+      "startupName": "AEREM",
+      "challengeId": "challenge-003",
+      "title": "Energy Analytics Dashboard",
+      "description": "Build a portal for demand forecasting and energy efficiency insights for municipal campuses.",
+      "solutionApproach": "Use IoT and predictive analytics to map energy usage and recommend interventions.",
+      "teamDescription": "2 energy engineers, 2 data scientists, 1 product manager",
+      "budgetEstimate": 2400000,
+      "founderEmail": "rohit@aerem.in",
+      "founderName": "Rohit Kapoor"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "challenge-001",
+      "title": "AI-Powered Citizen Request Triage",
+      "description": "Implement an intelligent system to categorize and route citizen service requests to the correct department.",
+      "keywords": ["AI", "NLP", "citizen services", "automation"],
+      "budget": 15000000,
+      "status": "open",
+      "department": "Citizen Services"
+    },
+    {
+      "id": "challenge-002",
+      "title": "Public Health Screening Platform",
+      "description": "Deploy a privacy-safe screening platform for early intervention and community health intelligence.",
+      "keywords": ["healthtech", "screening", "AI", "public health"],
+      "budget": 12000000,
+      "status": "open",
+      "department": "Health Department"
+    },
+    {
+      "id": "challenge-003",
+      "title": "Municipal Energy Optimization",
+      "description": "Create a monitoring and optimization dashboard for energy use, waste, and facility efficiency.",
+      "keywords": ["energy", "analytics", "dashboard", "sustainability"],
+      "budget": 9000000,
+      "status": "in_review",
+      "department": "Energy & Sustainability"
+    }
+  ]
+}
