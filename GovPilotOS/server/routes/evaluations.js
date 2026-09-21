@@ -5,11 +5,14 @@ const { authenticate, authorize, logActivity } = require('../middleware/auth');
 const router = express.Router();
 const db = require('../db/store');
 
-router.get('/proposal/:proposalId', authenticate, (req, res) => {
+router.get('/proposal/:proposalId', authenticate, async (req, res) => {
   try {
-    let results = db.getAll('evaluations').filter(e => e.proposal_id === req.params.proposalId);
+    if (req.user.role === 'startup') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    let results = (await db.getAll('evaluations')).filter(e => e.proposal_id === req.params.proposalId);
     
-    const users = db.getAll('users');
+    const users = await db.getAll('users');
     results = results.map(e => ({
       ...e,
       expert_name: users.find(u => u.id === e.expert_id)?.full_name || null,
@@ -25,12 +28,12 @@ router.get('/proposal/:proposalId', authenticate, (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('expert'), (req, res) => {
+router.post('/', authenticate, authorize('expert'), async (req, res) => {
   try {
     const id = uuidv4();
     const { proposal_id, innovation_score, feasibility_score, impact_score, overall_comment, recommendation, confidence_level } = req.body;
     
-    const existing = db.getAll('evaluations').find(e => e.proposal_id === proposal_id && e.expert_id === req.user.id);
+    const existing = (await db.getAll('evaluations')).find(e => e.proposal_id === proposal_id && e.expert_id === req.user.id);
     const evalData = {
       id: existing ? existing.id : id,
       proposal_id,
@@ -45,16 +48,16 @@ router.post('/', authenticate, authorize('expert'), (req, res) => {
     };
     
     if (existing) {
-      db.update('evaluations', existing.id, evalData);
+      await db.update('evaluations', existing.id, evalData);
     } else {
-      db.insert('evaluations', evalData);
+      await db.insert('evaluations', evalData);
     }
     
-    const evals = db.getAll('evaluations').filter(e => e.proposal_id === proposal_id);
+    const evals = (await db.getAll('evaluations')).filter(e => e.proposal_id === proposal_id);
     const avgInnovation = evals.reduce((a, e) => a + e.innovation_score, 0) / evals.length;
     const avgFeasibility = evals.reduce((a, e) => a + e.feasibility_score, 0) / evals.length;
     const avgImpact = evals.reduce((a, e) => a + e.impact_score, 0) / evals.length;
-    db.update('proposals', proposal_id, {
+    await db.update('proposals', proposal_id, {
       innovation_score: avgInnovation,
       feasibility_score: avgFeasibility,
       impact_score: avgImpact,

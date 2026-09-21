@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const challengeRoutes = require('./routes/challenges');
@@ -624,7 +625,22 @@ async function getPortalPayload(role, user) {
   };
 }
 
-app.use(cors());
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+}));
 app.use(express.json());
 app.use('/api', rateLimiter);
 app.use(express.static(path.join(__dirname, '..', 'public')));

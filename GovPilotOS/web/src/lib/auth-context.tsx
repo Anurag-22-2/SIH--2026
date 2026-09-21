@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Restore the session from the stored token on first mount. A missing token
   // means unauthenticated; `fetchCurrentUser` handles both live tokens and the
-  // offline "demo" token minted by the auth fallbacks.
+  // live token persisted by the authentication API.
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -39,7 +39,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         const current = await fetchCurrentUser();
-        if (!cancelled) setUser(current);
+        // A 401 clears the token and fetchCurrentUser returns the local demo
+        // user for legacy callers; it must not restore that user as a session.
+        if (!cancelled) setUser(hasAuthToken() ? current : null);
       } catch {
         if (!cancelled) setUser(null);
       } finally {

@@ -1,7 +1,14 @@
 const jwt = require('jsonwebtoken');
 const db = require('../db/store');
+require('dotenv').config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'govpilot-secret-key-2025';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set before starting the server.');
+}
+if (JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long.');
+}
 
 async function authenticate(req, res, next) {
   try {

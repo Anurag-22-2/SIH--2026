@@ -20,7 +20,7 @@ router.get('/health', (req, res) => {
   });
 });
 
-router.post('/anonymize', authenticate, authorizeRoles(['admin', 'gov', 'startup', 'expert']), (req, res) => {
+router.post('/anonymize', authenticate, authorizeRoles(['admin', 'government', 'startup', 'expert']), (req, res) => {
   try {
     const { payload } = req.body || {};
     const sanitized = DataAnonymizer.sanitize(payload ?? req.body ?? '');
@@ -30,7 +30,7 @@ router.post('/anonymize', authenticate, authorizeRoles(['admin', 'gov', 'startup
   }
 });
 
-router.post('/local-ai/verify', authenticate, authorizeRoles(['admin', 'gov']), async (req, res) => {
+router.post('/local-ai/verify', authenticate, authorizeRoles(['admin', 'government']), async (req, res) => {
   try {
     const { payload } = req.body || {};
     const result = await AIService.verifyLocalOnly(payload || {
@@ -46,7 +46,7 @@ router.post('/local-ai/verify', authenticate, authorizeRoles(['admin', 'gov']), 
   }
 });
 
-router.post('/screen-startup', authenticate, authorizeRoles(['admin', 'gov']), (req, res) => {
+router.post('/screen-startup', authenticate, authorizeRoles(['admin', 'government']), (req, res) => {
   try {
     const startup = req.body || {};
     const result = ScreeningService.autoScreenStartup(startup);
@@ -56,7 +56,7 @@ router.post('/screen-startup', authenticate, authorizeRoles(['admin', 'gov']), (
   }
 });
 
-router.post('/gfr-exemption', authenticate, authorizeRoles(['admin', 'gov']), (req, res) => {
+router.post('/gfr-exemption', authenticate, authorizeRoles(['admin', 'government']), (req, res) => {
   try {
     const { startup, challenge } = req.body || {};
     const result = ScreeningService.generateGfrExemptionDraft(startup || {}, challenge || {});
@@ -66,10 +66,13 @@ router.post('/gfr-exemption', authenticate, authorizeRoles(['admin', 'gov']), (r
   }
 });
 
-router.post('/matchmaking', authenticate, authorizeRoles(['admin', 'gov']), async (req, res) => {
+router.post('/matchmaking', authenticate, authorizeRoles(['admin', 'government']), async (req, res) => {
   try {
     const { challenge, startups } = req.body || {};
-    const existingStartups = startups && startups.length ? startups : await db.getAll('users').then((rows) => rows.filter((u) => u.role === 'startup'));
+    const existingStartups =
+      startups && startups.length
+        ? startups
+        : (await db.getAll('users')).filter((user) => user.role === 'startup');
     const results = MatchmakingService.getTopMatches(challenge || {}, existingStartups || [], 5);
     res.json({ ok: true, matches: results });
   } catch (error) {
@@ -77,7 +80,7 @@ router.post('/matchmaking', authenticate, authorizeRoles(['admin', 'gov']), asyn
   }
 });
 
-router.post('/milestones/extract', authenticate, authorizeRoles(['admin', 'gov', 'startup']), async (req, res) => {
+router.post('/milestones/extract', authenticate, authorizeRoles(['admin', 'government', 'startup']), async (req, res) => {
   try {
     const { proposalText, startupName, challengeTitle, proposalId } = req.body || {};
     const aiResult = await AIService.extractMilestonesFromProposal({ proposalText, startupName, challengeTitle });

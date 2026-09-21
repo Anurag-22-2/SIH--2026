@@ -10,7 +10,7 @@ const router = express.Router();
 /* AI Problem Analysis Endpoint                                      */
 /* ------------------------------------------------------------------ */
 
-router.post('/analyze-problem', async (req, res) => {
+router.post('/analyze-problem', authenticate, authorize('government', 'admin'), async (req, res) => {
   try {
     const input = req.body || {};
     if (!input.description && !input.problem_statement && !input.title) {
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, authorize('government', 'admin'), async (req, res) => {
   try {
     const body = req.body || {};
     const now = new Date().toISOString();
@@ -137,7 +137,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, authorize('government', 'admin'), async (req, res) => {
   try {
     const updated = await db.update('challenges', req.params.id, req.body || {});
     if (!updated) return res.status(404).json({ error: 'Challenge not found' });
@@ -147,7 +147,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.post('/:id/analyze', async (req, res) => {
+router.post('/:id/analyze', authenticate, authorize('government', 'admin'), async (req, res) => {
   try {
     const challenge = await db.getChallengeById(req.params.id);
     if (!challenge) return res.status(404).json({ error: 'Challenge not found' });
@@ -189,7 +189,7 @@ router.post('/:id/analyze', async (req, res) => {
   }
 });
 
-router.post('/:id/regenerate-analysis', async (req, res) => {
+router.post('/:id/regenerate-analysis', authenticate, authorize('government', 'admin'), async (req, res) => {
   try {
     const challenge = await db.getChallengeById(req.params.id);
     if (!challenge) return res.status(404).json({ error: 'Challenge not found' });
@@ -237,7 +237,7 @@ router.get('/:id/analysis-history', async (req, res) => {
   }
 });
 
-router.post('/:id/publish', async (req, res) => {
+router.post('/:id/publish', authenticate, authorize('government', 'admin'), async (req, res) => {
   try {
     const publishedBy = req.user?.id || req.body?.published_by || 'gov-user';
     const updated = await db.publishChallenge(req.params.id, publishedBy);
@@ -262,14 +262,14 @@ router.get('/:id/reviews', async (req, res) => {
   }
 });
 
-router.post('/:id/reviews', async (req, res) => {
+router.post('/:id/reviews', authenticate, authorize('expert'), async (req, res) => {
   try {
     const body = req.body || {};
     const review = await db.addChallengeReview({
       challenge_id: req.params.id,
-      reviewer_id: req.user?.id || body.reviewer_id || 'expert-user',
-      reviewer_name: req.user?.full_name || body.reviewer_name || 'Expert Reviewer',
-      reviewer_role: req.user?.role || body.reviewer_role || 'expert',
+      reviewer_id: req.user.id,
+      reviewer_name: req.user.full_name,
+      reviewer_role: req.user.role,
       rating: body.rating || 5,
       comment: body.comment || '',
       is_private: body.is_private ?? false,

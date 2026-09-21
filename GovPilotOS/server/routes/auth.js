@@ -2,18 +2,27 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const rateLimit = require('express-rate-limit');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 const JWT_SECRET = require('../middleware/auth').JWT_SECRET;
 const db = require('../db/store');
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Please try again later.' },
+});
 
-router.post('/register', async (req, res) => {
+router.post('/register', authRateLimiter, async (req, res) => {
   try {
     const { email, password, full_name, role, organization, bio, expertise } = req.body;
     if (!email || !password || !full_name || !role) {
       return res.status(400).json({ error: 'Email, password, full_name, and role are required' });
     }
-    if (!['government', 'startup', 'expert', 'admin'].includes(role)) {
+    if (!['government', 'startup', 'expert'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
@@ -44,7 +53,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -63,25 +72,12 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/me', async (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      const demoUser = await db.getUserByEmail('officer@govpilot.gov');
-      if (demoUser) {
-        const { password_hash, ...safeUser } = demoUser;
-        return res.json(safeUser);
-      }
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await db.getUserById(decoded.userId);
-    if (!user) return res.status(401).json({ error: 'Invalid token' });
-    const { password_hash, ...safeUser } = user;
+    const { password_hash, ...safeUser } = req.user;
     res.json(safeUser);
   } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(500).json({ error: err.message });
   }
 });
 

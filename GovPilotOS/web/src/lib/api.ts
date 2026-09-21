@@ -2,9 +2,9 @@
  * API facade for GovPilot OS.
  *
  * Every dashboard talks to these functions. They first attempt a live fetch()
- * against the Express backend at http://localhost:5000/api. If the server is
- * unreachable or returns an error, they fall back to the in-memory store so
- * the app never breaks.
+ * against the Express backend configured by NEXT_PUBLIC_API_URL. Requests
+ * without a session use the local store for the demo experience; authenticated
+ * failures are surfaced to the caller instead of being presented as success.
  */
 
 import * as store from "./store";
@@ -36,7 +36,9 @@ import type {
 /* Backend config                                                      */
 /* ------------------------------------------------------------------ */
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api"
+).replace(/\/+$/, "");
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -49,13 +51,91 @@ function setToken(token: string | null) {
   else localStorage.removeItem("govpilot_token");
 }
 
+export function hasAuthToken(): boolean {
+  return Boolean(getToken());
+}
+
+export interface SignUpInput {
+  email: string;
+  password: string;
+  full_name: string;
+  role: Role;
+  organization?: string;
+}
+
+interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export async function authSignIn(
+  email: string,
+  password: string,
+  role: Role = "government",
+): Promise<AuthResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch (err) {
+    console.warn("API call to /auth/login failed:", err);
+    throw new Error(
+      "The authentication service is unavailable. Please try again later.",
+    );
+  }
+  const body = (await res.json().catch(() => null)) as
+    | AuthResponse
+    | { error?: string }
+    | null;
+  if (!res.ok || !body || !("token" in body) || !("user" in body)) {
+    throw new Error(
+      (body && "error" in body && body.error) || `HTTP ${res.status}: Unable to sign in`,
+    );
+  }
+  setToken(body.token);
+  return body;
+}
+
+export async function authSignUp(input: SignUpInput): Promise<AuthResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const body = (await res.json().catch(() => null)) as
+      | AuthResponse
+      | { error?: string }
+      | null;
+    if (!res.ok || !body || !("token" in body) || !("user" in body)) {
+      throw new Error(
+        (body && "error" in body && body.error) || `HTTP ${res.status}: Unable to sign up`,
+      );
+    }
+    setToken(body.token);
+    return body;
+  } catch (err) {
+    console.warn("API call to /auth/register failed:", err);
+    throw err instanceof Error
+      ? err
+      : new Error("Unable to create the account. Please try again.");
+  }
+}
+
+export function authSignOut(): void {
+  setToken(null);
+}
+
 async function apiCall<T>(
   path: string,
   options: RequestInit = {},
   fallback: () => T | Promise<T>,
 ): Promise<T> {
   // The demo store is the intentional unauthenticated experience. Avoid
-  // making requests that the API will reject before falling back.
+  // making requests that the API will reject before using the local store.
   if (!getToken()) return fallback();
 
   try {
@@ -86,8 +166,10 @@ async function apiCall<T>(
 
     return undefined as T;
   } catch (err) {
-    console.warn(`API call to ${path} failed, falling back to mock store:`, err);
-    return fallback();
+    console.warn(`API call to ${path} failed:`, err);
+    throw err instanceof Error
+      ? err
+      : new Error(`API request to ${path} failed.`);
   }
 }
 
@@ -96,6 +178,7 @@ async function apiCall<T>(
 /* ------------------------------------------------------------------ */
 
 export async function fetchCurrentUser(): Promise<User> {
+  if (!getToken()) return store.getCurrentUser() as User;
   try {
     const token = getToken();
     const headers: Record<string, string> = {
@@ -109,7 +192,7 @@ export async function fetchCurrentUser(): Promise<User> {
 
     if (res.status === 401) {
       setToken(null);
-      return store.getCurrentUser() as User;
+      throw new Error("HTTP 401: Authentication required");
     }
 
     if (!res.ok) {
@@ -119,10 +202,10 @@ export async function fetchCurrentUser(): Promise<User> {
 
     return (await res.json()) as User;
   } catch (err) {
-    if (!(err instanceof Error && err.message.startsWith("HTTP 401"))) {
-      console.warn("API call to /auth/me failed, falling back to mock store:", err);
-    }
-    return store.getCurrentUser() as User;
+    console.warn("API call to /auth/me failed:", err);
+    throw err instanceof Error
+      ? err
+      : new Error("Unable to restore the authenticated session.");
   }
 }
 
