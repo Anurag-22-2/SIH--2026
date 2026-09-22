@@ -263,6 +263,22 @@ export async function registerStartup(input: StartupRegistrationInput): Promise<
   );
 }
 
+export async function fetchRisks(): Promise<any[]> {
+  return apiCall('/risks', {}, async () => {
+    // demo fallback: map recent activity entries to simple risk items
+    const items = store.selectActivity(20).map((n: any, i: number) => ({
+      id: `RK-DEMO-${i}`,
+      title: n.action || n.details || `Activity ${i + 1}`,
+      description: n.details || n.action || '',
+      severity: i % 3 === 0 ? 'high' : i % 3 === 1 ? 'medium' : 'low',
+      status: 'open',
+      owner: n.user_id,
+      created_at: n.created_at,
+    }));
+    return items;
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Government officer dashboard                                        */
 /* ------------------------------------------------------------------ */
