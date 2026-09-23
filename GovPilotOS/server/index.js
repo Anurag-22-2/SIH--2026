@@ -12,6 +12,7 @@ const kpiRoutes = require('./routes/kpis');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
 const secureRoutes = require('./routes/secure');
+const riskRoutes = require('./routes/risks');
 const { rateLimiter } = require('./middleware/security');
 const { ProposalService } = require('./services/proposal.service');
 const { ScreeningService } = require('./services/screening.service');
@@ -816,6 +817,7 @@ app.use('/api/kpis', kpiRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/security', secureRoutes);
+app.use('/api/risks', riskRoutes);
 
 app.get('/api/dashboard', async (req, res) => {
   try {

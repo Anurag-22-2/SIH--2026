@@ -276,7 +276,11 @@ export async function fetchRisks(): Promise<any[]> {
       created_at: n.created_at,
     }));
     return items;
-  });
+  }).then((result) =>
+    Array.isArray(result)
+      ? result
+      : ((result as { risks?: any[] } | null)?.risks ?? []),
+  );
 }
 
 /* ------------------------------------------------------------------ */

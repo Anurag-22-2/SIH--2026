@@ -48,6 +48,7 @@ import { NewChallengeModal } from "./NewChallengeModal";
 import { MeetingSchedulerModal } from "./MeetingSchedulerModal";
 import { StartupDetailModal } from "./StartupDetailModal";
 import { reviewMilestone, updatePilotProgress } from "@/lib/api";
+import RiskDashboard from "./risk-dashboard";
 
 const GOV_DEPARTMENTS = [
   "Public Works Department (PWD)",
@@ -185,7 +186,10 @@ export function GovernmentDashboard() {
       />
 
       {tab === "overview" && (
-        <OverviewTab data={data} onOpen={(t) => setTab(t)} onRefresh={refresh} />
+        <div className="space-y-6">
+          <OverviewTab data={data} onOpen={(t) => setTab(t)} onRefresh={refresh} />
+          <RiskDashboard />
+        </div>
       )}
       {tab === "challenges" && <ChallengesTab data={filtered} onRefresh={refresh} />}
       {tab === "proposals" && <ProposalsTab data={filtered} onRefresh={refresh} />}

@@ -15,6 +15,7 @@ const memoryTables = {
   scale_decisions: [],
   notifications: [],
   activity_log: [],
+  risks: [],
   milestones: [],
   contracts: [],
   meetings: [],
@@ -397,6 +398,22 @@ async function initDb() {
         details TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS risks (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        severity TEXT NOT NULL DEFAULT 'medium',
+        status TEXT NOT NULL DEFAULT 'open',
+        owner TEXT,
+        created_by TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (owner) REFERENCES users(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
       );
     `);
 

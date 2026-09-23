@@ -104,7 +104,15 @@ export function RiskDashboard() {
                 </div>
                 <div className="w-32">
                   <div className="text-xs text-slate-500">Mitigation progress</div>
-                  <ProgressBar value={Math.min(100, (Math.random() * 70) + (r.severity === 'high' ? 10 : 20))} />
+                  <ProgressBar
+                    value={
+                      r.status === "resolved"
+                        ? 100
+                        : r.status === "mitigating"
+                          ? 60
+                          : 15
+                    }
+                  />
                 </div>
               </div>
             ))}
