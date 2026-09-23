@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const challengeRoutes = require('./routes/challenges');
@@ -11,6 +12,7 @@ const kpiRoutes = require('./routes/kpis');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
 const secureRoutes = require('./routes/secure');
+const riskRoutes = require('./routes/risks');
 const { rateLimiter } = require('./middleware/security');
 const { ProposalService } = require('./services/proposal.service');
 const { ScreeningService } = require('./services/screening.service');
@@ -624,7 +626,22 @@ async function getPortalPayload(role, user) {
   };
 }
 
-app.use(cors());
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+}));
 app.use(express.json());
 app.use('/api', rateLimiter);
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -800,6 +817,7 @@ app.use('/api/kpis', kpiRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/security', secureRoutes);
+app.use('/api/risks', riskRoutes);
 
 app.get('/api/dashboard', async (req, res) => {
   try {

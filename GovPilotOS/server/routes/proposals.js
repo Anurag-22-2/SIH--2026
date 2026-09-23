@@ -1,6 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { authenticate, authorize, logActivity } = require('../middleware/auth');
+const { validateProposal } = require('../middleware/validators');
 const { ProposalService } = require('../services/proposal.service');
 
 const router = express.Router();
@@ -42,6 +43,30 @@ router.get('/challenge/:challengeId', authenticate, async (req, res) => {
   }
 });
 
+router.get('/expert', authenticate, authorize('expert'), async (req, res) => {
+  try {
+    const proposals = await db.getAll('proposals');
+    const users = await db.getAll('users');
+    const evaluations = await db.getAll('evaluations');
+    const assignedIds = new Set(
+      evaluations.filter((evaluation) => evaluation.expert_id === req.user.id).map((evaluation) => evaluation.proposal_id),
+    );
+    const enriched = await ProposalService.enrichProposals(
+      proposals.filter((proposal) => assignedIds.has(proposal.id)),
+      users,
+    );
+    return res.json(enriched.map((proposal) => {
+      const submitted = evaluations.some(
+        (evaluation) => evaluation.proposal_id === proposal.id &&
+          evaluation.expert_id === req.user.id && evaluation.status === 'submitted',
+      );
+      return submitted ? proposal : ProposalService.maskForExpert(proposal);
+    }));
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/', authenticate, async (req, res) => {
   try {
     let proposals = await db.getAll('proposals');
@@ -52,7 +77,13 @@ router.get('/', authenticate, async (req, res) => {
     proposals = await ProposalService.enrichProposals(proposals, users);
     if (req.user.role === 'expert') {
       const evaluations = await db.getAll('evaluations');
+      const assignedIds = new Set(
+        evaluations
+          .filter((evaluation) => evaluation.expert_id === req.user.id)
+          .map((evaluation) => evaluation.proposal_id),
+      );
       proposals = proposals.map((proposal) => {
+        if (!assignedIds.has(proposal.id)) return null;
         const submitted = evaluations.some(
           (evaluation) =>
             evaluation.proposal_id === proposal.id &&
@@ -60,31 +91,8 @@ router.get('/', authenticate, async (req, res) => {
             evaluation.status === 'submitted',
         );
         return submitted ? proposal : ProposalService.maskForExpert(proposal);
-      });
+      }).filter(Boolean);
 
-      router.get('/expert', authenticate, authorize('expert'), async (req, res) => {
-        try {
-          const proposals = await db.getAll('proposals');
-          const users = await db.getAll('users');
-          const evaluations = await db.getAll('evaluations');
-          const assignedIds = new Set(
-            evaluations.filter((evaluation) => evaluation.expert_id === req.user.id).map((evaluation) => evaluation.proposal_id),
-          );
-          const enriched = await ProposalService.enrichProposals(
-            proposals.filter((proposal) => assignedIds.has(proposal.id)),
-            users,
-          );
-          return res.json(enriched.map((proposal) => {
-            const submitted = evaluations.some(
-              (evaluation) => evaluation.proposal_id === proposal.id &&
-                evaluation.expert_id === req.user.id && evaluation.status === 'submitted',
-            );
-            return submitted ? proposal : ProposalService.maskForExpert(proposal);
-          }));
-        } catch (err) {
-          return res.status(500).json({ error: err.message });
-        }
-      });
     }
     return res.json(proposals);
   } catch (err) {
@@ -111,6 +119,12 @@ router.get('/:id', authenticate, async (req, res) => {
     }
     if (req.user.role === 'expert') {
       const evaluations = await db.getAll('evaluations');
+      const assigned = evaluations.some(
+        (evaluation) =>
+          evaluation.proposal_id === proposal.id &&
+          evaluation.expert_id === req.user.id,
+      );
+      if (!assigned) return res.status(403).json({ error: 'Forbidden' });
       const submitted = evaluations.some(
         (evaluation) =>
           evaluation.proposal_id === proposal.id &&
@@ -126,7 +140,7 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('startup'), async (req, res) => {
+router.post('/', authenticate, authorize('startup'), validateProposal, async (req, res) => {
   try {
     const id = uuidv4();
     const { challenge_id, title, description, solution_approach, timeline_weeks, budget_estimate, team_description, past_projects, trl_level } = req.body;

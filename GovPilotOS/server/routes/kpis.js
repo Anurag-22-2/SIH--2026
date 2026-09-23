@@ -5,39 +5,56 @@ const { authenticate, authorize, logActivity } = require('../middleware/auth');
 const router = express.Router();
 const db = require('../db/store');
 
-router.get('/pilot/all', authenticate, (req, res) => {
+async function getKpisVisibleToUser(user) {
+  const kpis = await db.getAll('kpis');
+  if (user.role !== 'startup') return kpis;
+
+  const pilots = await db.getAll('pilots');
+  const pilotIds = new Set(
+    pilots
+      .filter((pilot) => pilot.startup_id === user.id)
+      .map((pilot) => pilot.id),
+  );
+  return kpis.filter((kpi) => pilotIds.has(kpi.pilot_id));
+}
+
+router.get('/pilot/all', authenticate, async (req, res) => {
   try {
-    const kpis = db.getAll('kpis');
+    res.json(await getKpisVisibleToUser(req.user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/all', authenticate, async (req, res) => {
+  try {
+    res.json(await getKpisVisibleToUser(req.user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/pilot/:pilotId', authenticate, async (req, res) => {
+  try {
+    if (req.user.role === 'startup') {
+      const pilot = await db.getPilotById(req.params.pilotId);
+      if (!pilot || pilot.startup_id !== req.user.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+    const kpis = (await db.getAll('kpis')).filter(k => k.pilot_id === req.params.pilotId);
     res.json(kpis);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/all', authenticate, (req, res) => {
-  try {
-    const kpis = db.getAll('kpis');
-    res.json(kpis);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.get('/pilot/:pilotId', authenticate, (req, res) => {
-  try {
-    const kpis = db.getAll('kpis').filter(k => k.pilot_id === req.params.pilotId);
-    res.json(kpis);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.post('/', authenticate, authorize('government'), (req, res) => {
+router.post('/', authenticate, authorize('government'), async (req, res) => {
   try {
     const id = uuidv4();
     const { pilot_id, challenge_id, name, description, metric_type, unit, target_value, target_description, weight } = req.body;
     
-    db.insert('kpis', {
+    await db.insert('kpis', {
       id,
       pilot_id: pilot_id || null,
       challenge_id: challenge_id || null,
@@ -57,12 +74,12 @@ router.post('/', authenticate, authorize('government'), (req, res) => {
   }
 });
 
-router.post('/snapshot', authenticate, (req, res) => {
+router.post('/snapshot', authenticate, authorize('government', 'startup'), async (req, res) => {
   try {
     const id = uuidv4();
     const { kpi_id, pilot_id, reported_value, reported_text, notes } = req.body;
     
-    db.insert('kpi_snapshots', {
+    await db.insert('kpi_snapshots', {
       id,
       kpi_id,
       pilot_id,
@@ -79,13 +96,20 @@ router.post('/snapshot', authenticate, (req, res) => {
   }
 });
 
-router.get('/snapshots/pilot/:pilotId', authenticate, (req, res) => {
+router.get('/snapshots/pilot/:pilotId', authenticate, async (req, res) => {
   try {
-    const snapshots = db.getAll('kpi_snapshots')
+    if (req.user.role === 'startup') {
+      const pilot = await db.getPilotById(req.params.pilotId);
+      if (!pilot || pilot.startup_id !== req.user.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+    const kpis = await db.getAll('kpis');
+    const snapshots = (await db.getAll('kpi_snapshots'))
       .filter(ks => ks.pilot_id === req.params.pilotId)
       .map(ks => ({
         ...ks,
-        kpi_name: db.getAll('kpis').find(k => k.id === ks.kpi_id)?.name || null,
+        kpi_name: kpis.find(k => k.id === ks.kpi_id)?.name || null,
       }));
     
     snapshots.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
