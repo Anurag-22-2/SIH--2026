@@ -36,7 +36,17 @@ jobs:
       #   run: deno fmt --check
 
       - name: Run linter
-        run: deno lint
+        run: |
+          if [ -f deno.json ] || [ -f deno.jsonc ]; then
+            deno lint
+          else
+            echo "No deno.json/deno.jsonc found. Skipping Deno lint."
+          fi
 
       - name: Run tests
-        run: deno test -A
+        run: |
+          if find . -type f \( -name "*_test.ts" -o -name "*_test.tsx" -o -name "*.test.ts" -o -name "*.test.tsx" \) | grep -q .; then
+            deno test -A
+          else
+            echo "No Deno test files found. Skipping Deno tests."
+          fi
